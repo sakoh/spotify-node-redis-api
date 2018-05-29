@@ -20,4 +20,14 @@ app.get('/api/v1/artists/:id', (req, res) => {
   })
 })
 
+app.get('/api/v1/artists/:id/related-artists', (req, res) => {
+  request(`https://api.spotify.com/v1/artists/${req.params.id}/related-artists`, authHeader, (error, response, body) => {
+    if (error || response.statusCode !== 200) {
+      return console.log('Error occurred: ' + error)
+    }
+  
+    res.json(JSON.parse(body))
+  })
+})
+
 app.listen(3000, () => console.log('listening on http://localhost:3000'))
