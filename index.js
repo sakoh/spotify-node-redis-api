@@ -1,4 +1,5 @@
-const app = require('express')()
+const express = require('express')
+const app = express()
 const request = require('request')
 const authHeader = {
   'auth': {
@@ -10,10 +11,20 @@ app.get('/', function (req, res) {
   res.send('hello world')
 })
 
+app.get('/api/v1/search-artists/:name', (req, res) => {
+  request(`https://api.spotify.com/v1/search?q=${req.params.name}&type=artist`, authHeader, (error, response, body) => {
+    if (error || response.statusCode !== 200) {
+      return console.log('Error occurred: ' + response.body.message)
+    }
+  
+    res.json(JSON.parse(body))
+  })
+})
+
 app.get('/api/v1/artists/:id', (req, res) => {
   request(`https://api.spotify.com/v1/artists/${req.params.id}`, authHeader, (error, response, body) => {
     if (error || response.statusCode !== 200) {
-      return console.log('Error occurred: ' + error)
+      return console.log('Error occurred: ' + response.body.message)
     }
   
     res.json(JSON.parse(body))
@@ -23,11 +34,13 @@ app.get('/api/v1/artists/:id', (req, res) => {
 app.get('/api/v1/artists/:id/related-artists', (req, res) => {
   request(`https://api.spotify.com/v1/artists/${req.params.id}/related-artists`, authHeader, (error, response, body) => {
     if (error || response.statusCode !== 200) {
-      return console.log('Error occurred: ' + error)
+      return console.log('Error occurred: ' + response.body.message)
     }
   
     res.json(JSON.parse(body))
   })
 })
 
-app.listen(3000, () => console.log('listening on http://localhost:3000'))
+const server = app.listen(3000, () => console.log('listening on http://localhost:3000'))
+
+module.exports = server
