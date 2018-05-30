@@ -1,7 +1,7 @@
 const express = require('express')
 const app = express()
 const axios = require('axios')
-const authBearer = 'BQBd6QDnFfVjx3DyW0Nxmerkivnn2I4omUjaIu0uStR1ua0eI5SPVRVMKjPcxhJWi5DJGK224u_9nIZv_F6b97CPYNaPSzxSOac6TOsjVNLudYLOljp13R2BORoM9ftc9VBewdb1uBFgsWUPjFuwGZ5z7YksQSlEWwLPvRi07GPWYKU8sCWxwN0UK42vaQNFFa98cFw78mxN5wD_ujAm7t7vwo0CyzeIz0t8z577vmECDDg7ZAnAR2a0mpEsQu-_kQ'
+const authBearer = 'BQD3Ia4ZG-YX2if3LHn0X1IOpvqRLKbXUeIUznsmhl7rEijLXFRCGnipq34pghx4WuSmeEE3joemJJSrI76_zaUoC5sjDskC-frLTAa4vNluJkXnGJuqz9hat-oPt7U6ZfV8jp9sLcsRvAqN_AY5nuSCEK7gVDqU5w2kBk_dMgY5PSvoK0ZAku5HQNU9zShEJjUHd6iRKz8lZhZHt3J3xPQjkFXw9Qrw2R33JnOSqIwqSaY3SlwmYj7tqIP7UI1niA'
 const axiosInstance = axios.create({
   baseURL: 'https://api.spotify.com/v1/',
   headers: {
@@ -13,67 +13,38 @@ const redis = require('redis')
 const rclient = redis.createClient()
 const slugify = require("underscore.string/slugify")
 
+const getFromRedisOrSpotify = (req, res, key, url) => rclient.get(key, (err, rs) => {
+  if (rs) {
+    res.json(JSON.parse(rs))
+  } else {
+    axiosInstance.get(url)
+      .then(({
+        data
+      }) => {
+        rclient.set(key, JSON.stringify(data))
+        res.send(data)
+      })
+      .catch(e => res.send(e.response.data))
+  }
+})
+
 app.get('/', function (req, res) {
   res.send('hello world')
 })
 
 app.get('/api/v1/search-artists', (req, res) => {
   const key = `search--${slugify(req.query.q)}`
-
-  rclient.get(key, (err, rs) => {
-    if (rs) {
-      res.json(JSON.parse(rs))
-    } else {
-      axiosInstance.get(`search?q=${req.query.q}&type=artist`)
-        .then(({
-          data
-        }) => {
-          rclient.set(key, JSON.stringify(data))
-          res.send(data)
-        })
-        .catch(e => res.send(e.response.data))
-    }
-  })
+  getFromRedisOrSpotify(req, res, key, `search?q=${req.query.q}&type=artist`)
 })
 
 app.get('/api/v1/artists/:id', (req, res) => {
   const key = req.params.id
-
-  rclient.get(key, (err, rs) => {
-    if (rs) {
-      res.json(JSON.parse(rs))
-    } else {
-      axiosInstance.get(`artists/${key}`)
-        .then(({
-          data
-        }) => {
-          rclient.set(key, JSON.stringify(data))
-          res.json(data)
-        })
-        .catch(e => res.send(e.response.data))
-    }
-  })
+  getFromRedisOrSpotify(req, res, key, `artists/${key}`)
 })
 
 app.get('/api/v1/artists/:id/related-artists', (req, res) => {
   const key = `${req.params.id}--related-artists`
-
-  rclient.get(key, (err, rs) => {
-    if (rs) {
-      res.json(JSON.parse(rs))
-    } else {
-      axiosInstance.get(`artists/${req.params.id}/related-artists`)
-        .then(({
-          data
-        }) => {
-          rclient.set(key, JSON.stringify(data))
-          res.send(data)
-        })
-        .catch(e => {
-          res.send(e.response.data)
-        })
-    }
-  })
+  getFromRedisOrSpotify(req, res, key, `artists/${req.params.id}/related-artists`)
 })
 
 const server = app.listen(3000, () => console.log('listening on http://localhost:3000'))
