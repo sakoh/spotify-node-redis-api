@@ -18,28 +18,57 @@ app.get('/', function (req, res) {
 })
 
 app.get('/api/v1/search-artists', (req, res) => {
-  const key = slugify(req.query.q)
+  const key = `search--${slugify(req.query.q)}`
+
+  if(rclient.get(key)) {
+    rclient.get(key, (err, rs) => {
+      if(err) return res.json(err)
+
+      res.json(JSON.parse(rs))
+    })
+  }
+
   axiosInstance.get(`search?q=${req.query.q}&type=artist`)
     .then(({ data }) => {
-      rclient.set(`search--${key}`, JSON.stringify(data))
+      rclient.set(key, JSON.stringify(data))
       res.send(data)
     })
     .catch(e => res.send(e.response.data))
 })
 
 app.get('/api/v1/artists/:id', (req, res) => {
-  axiosInstance.get(`artists/${req.params.id}`)
+  const key = req.params.id
+
+  if(rclient.get(key)) {
+    rclient.get(key, (err, rs) => {
+      if(err) return res.json(err)
+
+      res.json(JSON.parse(rs))
+    })
+  }
+
+  axiosInstance.get(`artists/${key}`)
     .then(({ data }) => {
-      rclient.set(req.params.id, JSON.stringify(data))
+      rclient.set(key, JSON.stringify(data))
       res.json(data)
     })
     .catch(e => res.send(e.response.data))
 })
 
 app.get('/api/v1/artists/:id/related-artists', (req, res) => {
+  const key = `${req.params.id}--related-artists`
+
+  if(rclient.get(key)) {
+    rclient.get(key, (err, rs) => {
+      if(err) return res.json(err)
+
+      res.json(JSON.parse(rs))
+    })
+  }
+
   axiosInstance.get(`artists/${req.params.id}/related-artists`)
     .then(({ data }) => {
-      rclient.set(`${req.params.id}--related-artists`, JSON.stringify(data))
+      rclient.set(key, JSON.stringify(data))
       res.send(data)
     })
     .catch(e => { res.send(e.response.data) })
