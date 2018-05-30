@@ -9,26 +9,39 @@ const axiosInstance = axios.create({
     'Authorization': `Bearer ${authBearer}`,
   },
 })
+const redis = require('redis')
+const rclient = redis.createClient()
+const slugify = require("underscore.string/slugify")
 
 app.get('/', function (req, res) {
   res.send('hello world')
 })
 
 app.get('/api/v1/search-artists', (req, res) => {
+  const key = slugify(req.query.q)
   axiosInstance.get(`search?q=${req.query.q}&type=artist`)
-    .then(({ data }) => res.send(data))
+    .then(({ data }) => {
+      rclient.set(`search--${key}`, JSON.stringify(data))
+      res.send(data)
+    })
     .catch(e => res.send(e.response.data))
 })
 
 app.get('/api/v1/artists/:id', (req, res) => {
   axiosInstance.get(`artists/${req.params.id}`)
-    .then(({ data }) => res.json(data))
+    .then(({ data }) => {
+      rclient.set(req.params.id, JSON.stringify(data))
+      res.json(data)
+    })
     .catch(e => res.send(e.response.data))
 })
 
 app.get('/api/v1/artists/:id/related-artists', (req, res) => {
   axiosInstance.get(`artists/${req.params.id}/related-artists`)
-    .then(({ data }) => res.send(data))
+    .then(({ data }) => {
+      rclient.set(`${req.params.id}--related-artists`, JSON.stringify(data))
+      res.send(data)
+    })
     .catch(e => { res.send(e.response.data) })
 })
 
