@@ -20,58 +20,60 @@ app.get('/', function (req, res) {
 app.get('/api/v1/search-artists', (req, res) => {
   const key = `search--${slugify(req.query.q)}`
 
-  if(rclient.get(key)) {
-    rclient.get(key, (err, rs) => {
-      if(err) return res.json(err)
-
+  rclient.get(key, (err, rs) => {
+    if (rs) {
       res.json(JSON.parse(rs))
-    })
-  }
-
-  axiosInstance.get(`search?q=${req.query.q}&type=artist`)
-    .then(({ data }) => {
-      rclient.set(key, JSON.stringify(data))
-      res.send(data)
-    })
-    .catch(e => res.send(e.response.data))
+    } else {
+      axiosInstance.get(`search?q=${req.query.q}&type=artist`)
+        .then(({
+          data
+        }) => {
+          rclient.set(key, JSON.stringify(data))
+          res.send(data)
+        })
+        .catch(e => res.send(e.response.data))
+    }
+  })
 })
 
 app.get('/api/v1/artists/:id', (req, res) => {
   const key = req.params.id
 
-  if(rclient.get(key)) {
-    rclient.get(key, (err, rs) => {
-      if(err) return res.json(err)
-
+  rclient.get(key, (err, rs) => {
+    if (rs) {
       res.json(JSON.parse(rs))
-    })
-  }
-
-  axiosInstance.get(`artists/${key}`)
-    .then(({ data }) => {
-      rclient.set(key, JSON.stringify(data))
-      res.json(data)
-    })
-    .catch(e => res.send(e.response.data))
+    } else {
+      axiosInstance.get(`artists/${key}`)
+        .then(({
+          data
+        }) => {
+          rclient.set(key, JSON.stringify(data))
+          res.json(data)
+        })
+        .catch(e => res.send(e.response.data))
+    }
+  })
 })
 
 app.get('/api/v1/artists/:id/related-artists', (req, res) => {
   const key = `${req.params.id}--related-artists`
 
-  if(rclient.get(key)) {
-    rclient.get(key, (err, rs) => {
-      if(err) return res.json(err)
-
+  rclient.get(key, (err, rs) => {
+    if (rs) {
       res.json(JSON.parse(rs))
-    })
-  }
-
-  axiosInstance.get(`artists/${req.params.id}/related-artists`)
-    .then(({ data }) => {
-      rclient.set(key, JSON.stringify(data))
-      res.send(data)
-    })
-    .catch(e => { res.send(e.response.data) })
+    } else {
+      axiosInstance.get(`artists/${req.params.id}/related-artists`)
+        .then(({
+          data
+        }) => {
+          rclient.set(key, JSON.stringify(data))
+          res.send(data)
+        })
+        .catch(e => {
+          res.send(e.response.data)
+        })
+    }
+  })
 })
 
 const server = app.listen(3000, () => console.log('listening on http://localhost:3000'))
