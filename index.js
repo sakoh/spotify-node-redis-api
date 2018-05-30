@@ -1,44 +1,35 @@
 const express = require('express')
 const app = express()
-const request = require('request')
-const authHeader = {
-  'auth': {
-    'bearer': 'BQAl0LV0CO9XdBq3io82-lxDj7oorUlIV771Z7QjrpJHY66xVk2PYDiMcmxXydviUGuIlHbvq1gMtAfuck4v6E0it2YNRZveGx3rTRhtAa9ursu2DHT7CAHJju5NeJNViAwZicIC-lEfURJ6vR3yiwH0vkiE22Bu3pfWQ4rPRFEnFzF61UZDqJ_Z5MblgMmcn1EX8SL9eZTlSSylbFHD3cN-fagSovPvvdinwtSogfQQBFqQDLRyn6rvjeHHza4PXw'
-  }
-}
+const axios = require('axios')
+const authBearer = 'BQBd6QDnFfVjx3DyW0Nxmerkivnn2I4omUjaIu0uStR1ua0eI5SPVRVMKjPcxhJWi5DJGK224u_9nIZv_F6b97CPYNaPSzxSOac6TOsjVNLudYLOljp13R2BORoM9ftc9VBewdb1uBFgsWUPjFuwGZ5z7YksQSlEWwLPvRi07GPWYKU8sCWxwN0UK42vaQNFFa98cFw78mxN5wD_ujAm7t7vwo0CyzeIz0t8z577vmECDDg7ZAnAR2a0mpEsQu-_kQ'
+const axiosInstance = axios.create({
+  baseURL: 'https://api.spotify.com/v1/',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${authBearer}`,
+  },
+})
 
 app.get('/', function (req, res) {
   res.send('hello world')
 })
 
-app.get('/api/v1/search-artists/:name', (req, res) => {
-  request(`https://api.spotify.com/v1/search?q=${req.params.name}&type=artist`, authHeader, (error, response, body) => {
-    if (error || response.statusCode !== 200) {
-      return res.json(JSON.parse(response.body))
-    }
-
-    res.json(JSON.parse(body))
-  })
+app.get('/api/v1/search-artists', (req, res) => {
+  axiosInstance.get(`search?q=${req.query.q}&type=artist`)
+    .then(({ data }) => res.send(data))
+    .catch(e => res.send(e.response.data))
 })
 
 app.get('/api/v1/artists/:id', (req, res) => {
-  request(`https://api.spotify.com/v1/artists/${req.params.id}`, authHeader, (error, response, body) => {
-    if (error || response.statusCode !== 200) {
-      return res.json(JSON.parse(response.body))
-    }
-
-    res.json(JSON.parse(body))
-  })
+  axiosInstance.get(`artists/${req.params.id}`)
+    .then(({ data }) => res.json(data))
+    .catch(e => res.send(e.response.data))
 })
 
 app.get('/api/v1/artists/:id/related-artists', (req, res) => {
-  request(`https://api.spotify.com/v1/artists/${req.params.id}/related-artists`, authHeader, (error, response, body) => {
-    if (error || response.statusCode !== 200) {
-      return res.json(JSON.parse(response.body))
-    }
-
-    res.json(JSON.parse(body))
-  })
+  axiosInstance.get(`artists/${req.params.id}/related-artists`)
+    .then(({ data }) => res.send(data))
+    .catch(e => { res.send(e.response.data) })
 })
 
 const server = app.listen(3000, () => console.log('listening on http://localhost:3000'))
